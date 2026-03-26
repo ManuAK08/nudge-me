@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nudge Me — Job Search Accountability</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root[data-theme="dark"] {
+  --bg: #0c0c14;
+  --surface: #13131f;
+  --surface2: #1c1c2e;
+  --border: #2e2e45;
+  --accent: #f5c842;
+  --accent2: #6c8fff;
+  --success: #4ecca3;
+  --danger: #ff6b6b;
+  --text: #eeeef5;
+  --muted: #6b6b8a;
+  --shadow: rgba(0,0,0,0.4);
+  --mascot-bg: rgba(245,200,66,0.06);
+}
+:root[data-theme="light"] {
+  --bg: #f5f4ef;
+  --surface: #ffffff;
+  --surface2: #f0efe8;
+  --border: #e0ddd4;
+  --accent: #c8860a;
+  --accent2: #3a5fd9;
+  --success: #1a9e78;
+  --danger: #d93a3a;
+  --text: #1a1a2e;
+  --muted: #8a8a9a;
+  --shadow: rgba(0,0,0,0.08);
+  --mascot-bg: rgba(200,134,10,0.06);
+}
+* { margin:0; padding:0; box-sizing:border-box; transition:background 0.3s,color 0.2s,border-color 0.2s; }
+body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; padding-bottom:80px; }
+
+/* HEADER */
+.header { background:var(--surface); border-bottom:1px solid var(--border); padding:14px 24px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; box-shadow:0 2px 16px var(--shadow); }
+.logo { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:var(--accent); display:flex; align-items:center; gap:8px; letter-spacing:-0.02em; }
+.logo-pulse { width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:0.5} }
+.header-right { display:flex; align-items:center; gap:10px; }
+.clock { font-family:'DM Mono',monospace; font-size:12px; color:var(--muted); }
+.theme-btn { background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:6px 12px; cursor:pointer; font-size:15px; transition:transform 0.2s; }
+.theme-btn:hover { transform:scale(1.15); }
+
+/* CONTAINER */
+.container { max-width:720px; margin:0 auto; padding:20px 16px; }
+
+/* MASCOT */
+.mascot-card { background:var(--mascot-bg); border:1.5px solid var(--accent); border-radius:20px; padding:18px 22px; margin-bottom:20px; display:flex; align-items:center; gap:18px; position:relative; overflow:hidden; }
+.mascot-card::before { content:''; position:absolute; top:-40px; right:-40px; width:130px; height:130px; border-radius:50%; background:radial-gradient(circle,rgba(245,200,66,0.12) 0%,transparent 70%); pointer-events:none; }
+.mascot-emoji { font-size:52px; line-height:1; flex-shrink:0; animation:float 3s ease-in-out infinite; filter:drop-shadow(0 4px 8px rgba(245,200,66,0.25)); cursor:pointer; user-select:none; }
+@keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 33%{transform:translateY(-5px) rotate(-3deg)} 66%{transform:translateY(-2px) rotate(2deg)} }
+@keyframes celebrate { 0%{transform:scale(1)} 25%{transform:scale(1.4) rotate(-12deg)} 55%{transform:scale(1.25) rotate(10deg)} 100%{transform:scale(1) rotate(0)} }
+.mascot-emoji.pop { animation:celebrate 0.6s ease forwards !important; }
+.mascot-text { flex:1; }
+.mascot-label { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin-bottom:5px; }
+.mascot-msg { font-size:13.5px; line-height:1.6; color:var(--text); }
+.mascot-mood { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); margin-top:5px; }
+
+/* STATS */
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px 12px; text-align:center; box-shadow:0 2px 10px var(--shadow); position:relative; overflow:hidden; }
+.stat-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:3px; border-radius:0 0 16px 16px; }
+.stat-card.jobs::after { background:var(--accent2); }
+.stat-card.study::after { background:var(--accent); }
+.stat-card.streak::after { background:var(--success); }
+.stat-num { font-family:'Syne',sans-serif; font-size:34px; font-weight:800; line-height:1; margin-bottom:4px; }
+.stat-card.jobs .stat-num { color:var(--accent2); }
+.stat-card.study .stat-num { color:var(--accent); }
+.stat-card.streak .stat-num { color:var(--success); }
+.stat-lbl { font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
+
+/* SECTION */
+.section { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:18px; margin-bottom:14px; box-shadow:0 2px 10px var(--shadow); }
+.sec-head { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.sec-icon { font-size:17px; }
+.sec-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; }
+.sec-badge { margin-left:auto; font-family:'DM Mono',monospace; font-size:9px; padding:3px 8px; border-radius:10px; background:var(--surface2); color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; }
+
+/* SCHEDULE */
+.slot { display:flex; align-items:flex-start; gap:12px; padding:9px 10px; border-radius:12px; cursor:pointer; border:1px solid transparent; margin-bottom:3px; transition:all 0.15s; }
+.slot:hover { background:var(--surface2); border-color:var(--border); }
+.slot.active { background:rgba(245,200,66,0.05); border-color:var(--accent); }
+.slot.done { opacity:0.45; }
+.slot.done .slot-title { text-decoration:line-through; }
+.slot-time { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); min-width:48px; padding-top:3px; }
+.slot-body { flex:1; }
+.slot-title { font-size:13px; font-weight:500; margin-bottom:1px; }
+.slot-desc { font-size:11px; color:var(--muted); line-height:1.4; }
+.slot-check { width:22px; height:22px; border:2px solid var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; font-size:12px; transition:all 0.2s; }
+.slot.done .slot-check { background:var(--success); border-color:var(--success); color:var(--bg); }
+
+/* INPUTS */
+.input-row { display:flex; gap:8px; margin-bottom:10px; }
+.inp { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:9px 13px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text); outline:none; }
+.inp:focus { border-color:var(--accent); }
+.inp::placeholder { color:var(--muted); }
+.btn { background:var(--accent); color:var(--bg); border:none; border-radius:10px; padding:9px 16px; font-family:'Syne',sans-serif; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; transition:all 0.2s; }
+.btn:hover { opacity:0.85; transform:translateY(-1px); }
+
+/* LISTS */
+.app-list, .win-list { display:flex; flex-direction:column; gap:5px; max-height:180px; overflow-y:auto; }
+.app-item { display:flex; align-items:center; gap:10px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; }
+.app-role { flex:1; font-weight:500; }
+.app-co { color:var(--muted); font-size:11px; }
+.pill { font-family:'DM Mono',monospace; font-size:9px; padding:2px 8px; border-radius:8px; letter-spacing:0.06em; text-transform:uppercase; background:rgba(108,143,255,0.15); color:var(--accent2); }
+.win-item { display:flex; gap:10px; align-items:flex-start; font-size:12px; padding:8px 12px; background:rgba(78,204,163,0.05); border:1px solid rgba(78,204,163,0.15); border-radius:10px; line-height:1.4; }
+.win-star { color:var(--success); flex-shrink:0; }
+.win-time { color:var(--muted); font-size:10px; margin-left:auto; font-family:'DM Mono',monospace; white-space:nowrap; }
+.empty-hint { font-size:12px; color:var(--muted); padding:8px 0; }
+
+/* WEEK */
+.week-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+.day-cell { aspect-ratio:1; border-radius:12px; border:1px solid var(--border); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; background:var(--surface2); }
+.day-cell.today { border-color:var(--accent); border-width:2px; background:rgba(245,200,66,0.04); }
+.day-name { font-family:'DM Mono',monospace; font-size:8px; color:var(--muted); text-transform:uppercase; }
+.day-dots { display:flex; gap:3px; }
+.day-dot { width:5px; height:5px; border-radius:50%; background:var(--border); }
+
+/* SYNC */
+.sync-bar { display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--surface2); border-radius:10px; font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); margin-top:10px; }
+.s-dot { width:6px; height:6px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+.s-dot.syncing { background:var(--accent); animation:pulse 1s infinite; }
+.s-dot.synced { background:var(--success); }
+.s-dot.error { background:var(--danger); }
+
+/* SIGN IN */
+.overlay { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:1000; padding:32px; }
+.ov-emoji { font-size:72px; margin-bottom:16px; animation:float 3s ease-in-out infinite; }
+.ov-title { font-family:'Syne',sans-serif; font-size:36px; font-weight:800; color:var(--accent); margin-bottom:8px; }
+.ov-sub { font-size:14px; color:var(--muted); text-align:center; max-width:300px; line-height:1.7; margin-bottom:28px; }
+.ov-btn { background:var(--surface); border:2px solid var(--accent); border-radius:14px; padding:14px 28px; font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:var(--accent); cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s; }
+.ov-btn:hover { background:var(--accent); color:var(--bg); transform:translateY(-2px); box-shadow:0 8px 24px rgba(245,200,66,0.25); }
+.ov-note { margin-top:14px; font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); }
+
+/* TOAST */
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:11px 20px; font-size:13px; box-shadow:0 8px 24px var(--shadow); transition:transform 0.3s; z-index:500; white-space:nowrap; }
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+::-webkit-scrollbar { width:3px; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+</style>
+</head>
+<body>
+
+<!-- SIGN IN -->
+<div class="overlay" id="overlay">
+  <div class="ov-emoji">🦦</div>
+  <div class="ov-title">Nudge Me</div>
+  <div class="ov-sub">A no-BS accountability dashboard for job seekers who keep saying "I'll apply tomorrow."</div>
+  <button class="ov-btn" onclick="signIn()">
+    <svg width="17" height="17" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66 2.84z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    Sign in with Google
+  </button>
+  <div class="ov-note">Syncs automatically to your Google Sheet • No manual work</div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo"><div class="logo-pulse"></div>Nudge Me</div>
+  <div class="header-right">
+    <div class="clock" id="clock">—:——</div>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- MASCOT -->
+  <div class="mascot-card">
+    <div class="mascot-emoji" id="mascotEmoji" onclick="popMascot()">🦦</div>
+    <div class="mascot-text">
+      <div class="mascot-label">Nudge · your accountability buddy</div>
+      <div class="mascot-msg" id="mascotMsg">Loading your nudge...</div>
+      <div class="mascot-mood" id="mascotMood"></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card jobs"><div class="stat-num" id="jobCount">0</div><div class="stat-lbl">Apps<br>This Week</div></div>
+    <div class="stat-card study"><div class="stat-num" id="studyHrs">0h</div><div class="stat-lbl">Study<br>Hours</div></div>
+    <div class="stat-card streak"><div class="stat-num" id="streakNum">0</div><div class="stat-lbl">Day<br>Streak 🔥</div></div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="section">
+    <div class="sec-head"><span class="sec-icon">📋</span><span class="sec-title">Today's Schedule</span><span class="sec-badge" id="schedBadge">0 / 0</span></div>
+    <div id="schedList"></div>
+    <div class="sync-bar"><div class="s-dot" id="schedDot"></div><span id="schedSync">Not synced yet</span></div>
+  </div>
+
+  <!-- APPLICATIONS -->
+  <div class="section">
+    <div class="sec-head"><span class="sec-icon">💼</span><span class="sec-title">Applications Log</span><span class="sec-badge" id="appBadge">0 logged</span></div>
+    <div class="input-row">
+      <input class="inp" id="appRole" placeholder="Role title" style="flex:1.3">
+      <input class="inp" id="appCo" placeholder="Company">
+      <button class="btn" onclick="addApp()">+ Log</button>
+    </div>
+    <div class="app-list" id="appList"></div>
+    <div class="sync-bar"><div class="s-dot" id="appDot"></div><span id="appSync">Not synced yet</span></div>
+  </div>
+
+  <!-- WINS -->
+  <div class="section">
+    <div class="sec-head"><span class="sec-icon">✨</span><span class="sec-title">Today's Wins</span><span class="sec-badge">tiny ones count</span></div>
+    <div class="input-row">
+      <input class="inp" id="winInp" placeholder="e.g. Got out of bed before noon. Applied to 1 job.">
+      <button class="btn" onclick="addWin()">+ Add</button>
+    </div>
+    <div class="win-list" id="winList"></div>
+  </div>
+
+  <!-- WEEK -->
+  <div class="section">
+    <div class="sec-head"><span class="sec-icon">📅</span><span class="sec-title">This Week</span></div>
+    <div class="week-grid" id="weekGrid"></div>
+    <div style="display:flex;gap:16px;margin-top:10px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">
+      <span>🟡 Study</span><span>🔵 Apps</span><span>🟢 Full day</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CLIENT_ID = '688887875011-qjlba426ooirqbil5nar843g8vqd5nld.apps.googleusercontent.com';
+const SHEET_ID  = '1FQoKPi4FVZIBFfhCUjJMBI6GF-nSQGS1jAVKZUan7xc';
+const SCOPES    = 'https://www.googleapis.com/auth/spreadsheets';
+
+let token = null, tokenClient = null;
+
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const STORE = 'nudge_v4';
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; }
+}
+let D = load();
+D.streak = D.streak || 0;
+D.done   = D.done   || {};
+D.apps   = D.apps   || [];
+D.wins   = D.wins   || [];
+
+function save() { localStorage.setItem(STORE, JSON.stringify(D)); }
+
+// ─── SCHEDULE ────────────────────────────────────────────────────────────────
+const SLOTS = [
+  {t:'08:00',e:8.5, id:'wake',   title:'Wake up — phone stays down',       desc:"Water. Splash face. Sit up. That's the whole job right now.",         em:'🌅'},
+  {t:'08:30',e:9,   id:'move',   title:'Move + fresh air',                  desc:'Walk to the kitchen. Open a window. 5 min outside if you can.',      em:'🚶'},
+  {t:'09:00',e:11,  id:'study1', title:'⚡ Study Block 1 — 2 hours',        desc:'SQL / Python / Analytics. Phone. Other. Room. Timer on.',             em:'📚'},
+  {t:'11:00',e:11.5,id:'meal',   title:'Eat something real',                desc:"Not chips. Actual food. 30 min away from screen.",                    em:'🍽️'},
+  {t:'11:30',e:13,  id:'jobs1',  title:'💼 Applications — Block 1',        desc:'Max 3 targeted applications. Quality over quantity.',                 em:'💼'},
+  {t:'13:00',e:13.5,id:'break1', title:'Break + walk',                      desc:'20 min. Non-negotiable. Body needs reset.',                           em:'☀️'},
+  {t:'13:30',e:15,  id:'jobs2',  title:'💼 Applications — Block 2',        desc:'Referral outreach, LinkedIn connects, follow-ups.',                   em:'📨'},
+  {t:'15:00',e:16,  id:'study2', title:'⚡ Study Block 2 — 1 hour',        desc:'Review notes, one practice problem, one case study.',                 em:'🧠'},
+  {t:'16:00',e:16.5,id:'log',    title:'Log wins + plan tomorrow',          desc:'Fill this tracker. Write 3 things done today.',                       em:'📝'},
+  {t:'16:30',e:22,  id:'free',   title:'Free time — earned',                desc:"Netflix, reels — guilt-free. You worked for this.",                   em:'🎉'},
+  {t:'22:00',e:23,  id:'wind',   title:'Wind down — screens off at 10pm',  desc:'Dim lights. No doom scroll. Sleep by 11. This is the hardest one.',   em:'🌙'},
+];
+
+// ─── MASCOT ───────────────────────────────────────────────────────────────────
+const MOODS = {
+  morning: { em:'🦦', msgs:["Good morning! Day is unwritten. Water first, then we move.","Hey, you're up. That already counts. Now, don't touch the phone yet.","Your future employer is probably already at their desk. Let's match that energy."], mood:"mood: cautiously optimistic 🌱" },
+  study:   { em:'🤓', msgs:["Study time. The SQL you learn today might be the one they ask in the interview.","Phone. Other. Room. You remember more than you think.","Every analyst who got hired studied when they didn't feel like it. You're doing the thing."], mood:"mood: focused & caffeinated ☕" },
+  jobs:    { em:'💪', msgs:["Application time. 3 good ones beats 20 lazy ones. Pick the right JDs.","Every no is routing you to the right yes. Keep the pipeline moving.","That referral you're waiting on? Build more options while you wait."], mood:"mood: determined 🚀" },
+  break:   { em:'😌', msgs:["Actual break. Step outside. The recruiter email won't arrive faster if you stare at it.","Your brain consolidates learning during rest. This walk IS productive.","You've been working. Now rest, actually rest."], mood:"mood: recharging 🔋" },
+  evening: { em:'🦦', msgs:["Log your wins. 'I made coffee and didn't doom scroll for 2 hours' counts.","You made it through another day. That's the streak. Every day compounds.","Rest is part of the job search. Enjoy tonight guilt-free."], mood:"mood: proud of you, actually 💛" },
+  night:   { em:'😴', msgs:["Hey. Put the phone down. The job won't appear at 1am.","Sleep is when your brain files away everything you learned. Don't skip it.","The 3am productive feeling is a trap. Real momentum comes from morning energy."], mood:"mood: gently nagging 🌙" },
+};
+
+function getMood(h) {
+  if (h>=6&&h<9) return 'morning';
+  if (h>=9&&h<11) return 'study';
+  if (h>=11&&h<13) return 'jobs';
+  if (h>=13&&h<13.5) return 'break';
+  if (h>=13.5&&h<16) return 'jobs';
+  if (h>=16&&h<22) return 'evening';
+  return 'night';
+}
+
+let lastMsg = '';
+function refreshMascot(h) {
+  const m = MOODS[getMood(h)];
+  const pool = m.msgs.filter(x=>x!==lastMsg);
+  const msg = pool[Math.floor(Math.random()*pool.length)];
+  lastMsg = msg;
+  document.getElementById('mascotEmoji').textContent = m.em;
+  document.getElementById('mascotMsg').textContent   = msg;
+  document.getElementById('mascotMood').textContent  = m.mood;
+}
+
+function popMascot() {
+  const el = document.getElementById('mascotEmoji');
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  setTimeout(()=>el.classList.remove('pop'),700);
+}
+
+// ─── CLOCK ───────────────────────────────────────────────────────────────────
+function tick() {
+  const now = new Date(), h = now.getHours(), m = now.getMinutes();
+  document.getElementById('clock').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  refreshMascot(h);
+  const hd = h+m/60;
+  document.querySelectorAll('.slot').forEach(el=>el.classList.remove('active'));
+  SLOTS.forEach(s=>{
+    const sh = parseInt(s.t)+parseInt(s.t.split(':')[1])/60;
+    if (hd>=sh && hd<s.e) { const el=document.getElementById('s-'+s.id); if(el) el.classList.add('active'); }
+  });
+}
+
+// ─── SCHEDULE RENDER ─────────────────────────────────────────────────────────
+function renderSched() {
+  const list = document.getElementById('schedList');
+  list.innerHTML = '';
+  let done = 0;
+  SLOTS.forEach(s=>{
+    const isDone = D.done[s.id];
+    if (isDone) done++;
+    const div = document.createElement('div');
+    div.className = 'slot'+(isDone?' done':'');
+    div.id = 's-'+s.id;
+    div.innerHTML = `<div class="slot-time">${s.t}</div><div class="slot-body"><div class="slot-title">${s.em} ${s.title}</div><div class="slot-desc">${s.desc}</div></div><div class="slot-check">${isDone?'✓':''}</div>`;
+    div.onclick = ()=>toggleSlot(s.id);
+    list.appendChild(div);
+  });
+  document.getElementById('schedBadge').textContent = `${done} / ${SLOTS.length}`;
+}
+
+function toggleSlot(id) {
+  D.done[id] = !D.done[id];
+  if (D.done[id]) { popMascot(); toast('✅ Logged! Keep going.'); syncSched(); }
+  updateStreak(); save(); renderSched(); updateStats();
+}
+
+// ─── APPLICATIONS ────────────────────────────────────────────────────────────
+function addApp() {
+  const role = document.getElementById('appRole').value.trim();
+  const co   = document.getElementById('appCo').value.trim();
+  if (!role) return;
+  const entry = {role, co, date:new Date().toLocaleDateString(), ts:new Date().toISOString()};
+  D.apps.unshift(entry);
+  document.getElementById('appRole').value = '';
+  document.getElementById('appCo').value = '';
+  save(); renderApps(); updateStats(); syncApp(entry); popMascot();
+  toast('💼 Application logged! One step closer.');
+}
+
+function renderApps() {
+  const list = document.getElementById('appList');
+  if (!D.apps.length) { list.innerHTML = '<div class="empty-hint">No applications yet. Let\'s fix that.</div>'; document.getElementById('appBadge').textContent='0 logged'; return; }
+  list.innerHTML = '';
+  D.apps.slice(0,15).forEach(a=>{
+    const div = document.createElement('div');
+    div.className='app-item';
+    div.innerHTML=`<span class="app-role">${a.role}</span><span class="app-co">${a.co}</span><span class="pill">applied</span>`;
+    list.appendChild(div);
+  });
+  document.getElementById('appBadge').textContent=`${D.apps.length} logged`;
+}
+
+// ─── WINS ─────────────────────────────────────────────────────────────────────
+function addWin() {
+  const val = document.getElementById('winInp').value.trim();
+  if (!val) return;
+  D.wins.unshift({text:val, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  document.getElementById('winInp').value='';
+  save(); renderWins(); popMascot(); toast("✨ Win logged! You're building momentum.");
+}
+
+function renderWins() {
+  const list = document.getElementById('winList');
+  if (!D.wins.length) { list.innerHTML='<div class="empty-hint">Log one win. Any win. Getting out of bed counts.</div>'; return; }
+  list.innerHTML='';
+  D.wins.slice(0,10).forEach(w=>{
+    const div=document.createElement('div'); div.className='win-item';
+    div.innerHTML=`<span class="win-star">✦</span><span>${w.text}</span><span class="win-time">${w.time}</span>`;
+    list.appendChild(div);
+  });
+}
+
+// ─── WEEK GRID ───────────────────────────────────────────────────────────────
+function renderWeek() {
+  const grid = document.getElementById('weekGrid');
+  grid.innerHTML = '';
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach((d,i)=>{
+    const cell = document.createElement('div');
+    cell.className='day-cell'+(i===new Date().getDay()?' today':'');
+    cell.innerHTML=`<div class="day-name">${d}</div><div class="day-dots"><div class="day-dot"></div><div class="day-dot"></div></div>`;
+    grid.appendChild(cell);
+  });
+}
+
+// ─── STATS ───────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('jobCount').textContent = D.apps.length;
+  const sh = ['study1','study2'].filter(s=>D.done[s]).length;
+  document.getElementById('studyHrs').textContent = sh===2?'3h':sh===1?'2h':'0h';
+  document.getElementById('streakNum').textContent = D.streak;
+}
+
+function updateStreak() {
+  const today = new Date().toDateString();
+  if (Object.values(D.done).filter(Boolean).length>=3 && D.lastDay!==today) {
+    D.lastDay=today; D.streak=(D.streak||0)+1;
+  }
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ─── THEME ───────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const dark = document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme', dark?'light':'dark');
+  document.getElementById('themeBtn').textContent = dark?'☀️':'🌙';
+  localStorage.setItem('nudge_theme', dark?'light':'dark');
+}
+
+// ─── GOOGLE OAUTH ─────────────────────────────────────────────────────────────
+function signIn() {
+  if (!tokenClient) { toast('⏳ Google still loading, try again.'); return; }
+  tokenClient.requestAccessToken();
+}
+
+function initGoogle() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (r)=>{
+      if (r.error) { toast('❌ Sign in failed. Try again.'); return; }
+      token = r.access_token;
+      document.getElementById('overlay').style.display='none';
+      toast('✅ Signed in! Data will sync to your Google Sheet.');
+      setupSheets();
+    }
+  });
+}
+
+// ─── SHEETS ──────────────────────────────────────────────────────────────────
+async function sheetAppend(range, rows) {
+  if (!token) return false;
+  try {
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED`,{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+      body:JSON.stringify({values:rows})
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+async function setupSheets() {
+  await sheetAppend('Applications!A1',[['Date','Role','Company','Status','Timestamp']]);
+  await sheetAppend('DailyLog!A1',[['Date','Block','Status','Logged At']]);
+  toast('📊 Google Sheet connected!');
+}
+
+function setSync(dotId, txtId, state, msg) {
+  document.getElementById(dotId).className='s-dot '+state;
+  document.getElementById(txtId).textContent=msg;
+}
+
+async function syncApp(entry) {
+  setSync('appDot','appSync','syncing','Syncing...');
+  const ok = await sheetAppend('Applications!A:E',[[entry.date,entry.role,entry.co,'applied',entry.ts]]);
+  const t = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  ok ? setSync('appDot','appSync','synced',`Synced at ${t}`) : setSync('appDot','appSync','error','Sync failed — check connection');
+}
+
+async function syncSched() {
+  setSync('schedDot','schedSync','syncing','Syncing...');
+  const rows = Object.entries(D.done).filter(([,v])=>v).map(([k])=>[new Date().toDateString(),k,'done',new Date().toLocaleTimeString()]);
+  const ok = await sheetAppend('DailyLog!A:D',rows);
+  const t = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  ok ? setSync('schedDot','schedSync','synced',`Synced at ${t}`) : setSync('schedDot','schedSync','error','Sync failed');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+const theme = localStorage.getItem('nudge_theme')||'dark';
+document.documentElement.setAttribute('data-theme',theme);
+document.getElementById('themeBtn').textContent = theme==='dark'?'🌙':'☀️';
+
+const gsi = document.createElement('script');
+gsi.src='https://accounts.google.com/gsi/client';
+gsi.onload=initGoogle;
+document.head.appendChild(gsi);
+
+renderSched(); renderApps(); renderWins(); renderWeek(); updateStats(); tick();
+setInterval(tick, 60000);
+setInterval(()=>refreshMascot(new Date().getHours()), 300000);
+</script>
+</body>
+</html>
