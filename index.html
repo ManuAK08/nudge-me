@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nudge Me</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root[data-theme="dark"] {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --surface2: #1a1a24;
+  --border: #2a2a3a;
+  --accent: #e8c97a;
+  --accent2: #7a9ee8;
+  --danger: #e87a7a;
+  --success: #7ae8a8;
+  --text: #e8e8f0;
+  --muted: #6b6b80;
+  --card-bg: #111118;
+  --toggle-bg: #2a2a3a;
+}
+:root[data-theme="light"] {
+  --bg: #f5f4ef;
+  --surface: #ffffff;
+  --surface2: #eeeae0;
+  --border: #ddd9ce;
+  --accent: #c4922a;
+  --accent2: #3a6ec4;
+  --danger: #c43a3a;
+  --success: #2a8a50;
+  --text: #1a1a12;
+  --muted: #8a8570;
+  --card-bg: #ffffff;
+  --toggle-bg: #ddd9ce;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+.container { max-width: 740px; margin: 0 auto; padding: 24px 16px 60px; }
+
+/* LOGIN */
+#loginScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 20px; text-align: center; padding: 24px; }
+.otter-big { font-size: 72px; animation: bob 2s ease-in-out infinite; display: block; }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.login-title { font-family: 'Playfair Display', serif; font-size: 52px; font-weight: 900; color: var(--accent); letter-spacing: -1px; }
+.login-tagline { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); max-width: 340px; line-height: 1.9; letter-spacing: 0.06em; }
+.otter-quote { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 16px; max-width: 300px; border-left: 3px solid var(--accent); }
+.login-btn { background: var(--accent); color: var(--bg); border: none; border-radius: 10px; padding: 15px 32px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; cursor: pointer; letter-spacing: 0.06em; transition: all 0.2s; box-shadow: 0 4px 14px rgba(232,201,122,0.3); }
+.login-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(232,201,122,0.4); }
+#loginStatus { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
+
+/* APP */
+#app { display: none; }
+
+/* TOPBAR */
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.otter-small { font-size: 28px; }
+.app-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--accent); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.theme-toggle { background: var(--toggle-bg); border: none; border-radius: 20px; padding: 6px 12px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+.theme-toggle:hover { opacity: 0.8; }
+.clock-display { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--muted); }
+
+/* TABS */
+.tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface2); padding: 4px; border-radius: 10px; }
+.tab { flex: 1; padding: 9px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; border: none; background: transparent; color: var(--muted); cursor: pointer; border-radius: 7px; transition: all 0.2s; letter-spacing: 0.04em; }
+.tab.active { background: var(--surface); color: var(--text); font-weight: 500; }
+
+/* OTTER NUDGE */
+.nudge-bar { display: flex; align-items: flex-start; gap: 12px; background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 10px; padding: 14px 16px; margin-bottom: 22px; }
+.nudge-otter { font-size: 24px; flex-shrink: 0; }
+.nudge-content { flex: 1; }
+.nudge-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: var(--accent); text-transform: uppercase; margin-bottom: 5px; }
+.nudge-text { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text); line-height: 1.7; }
+
+/* STATS */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 12px; text-align: center; }
+.stat-num { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+.stat-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+.stat-card:nth-child(1) .stat-num { color: var(--accent2); }
+.stat-card:nth-child(2) .stat-num { color: var(--accent); }
+.stat-card:nth-child(3) .stat-num { color: var(--success); }
+
+/* SECTION */
+.section-title { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* SCHEDULE */
+.schedule-block { margin-bottom: 26px; }
+.time-slot { display: flex; align-items: flex-start; gap: 14px; padding: 11px 8px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; border-radius: 6px; }
+.time-slot:hover { background: var(--surface2); }
+.time-slot:last-child { border-bottom: none; }
+.time-slot.active-now { background: rgba(232,201,122,0.07); border-left: 2px solid var(--accent); padding-left: 12px; }
+.time-tag { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); min-width: 60px; padding-top: 2px; }
+.slot-content { flex: 1; }
+.slot-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.slot-desc { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); line-height: 1.5; }
+.slot-check { width: 20px; height: 20px; border: 1.5px solid var(--border); border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; transition: all 0.2s; font-size: 11px; }
+.time-slot.done .slot-check { background: var(--success); border-color: var(--success); color: #0a0a0f; }
+.time-slot.done .slot-title { text-decoration: line-through; color: var(--muted); }
+
+/* INPUTS */
+.input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.app-input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text); outline: none; transition: border-color 0.2s; }
+.app-input:focus { border-color: var(--accent); }
+.app-input::placeholder { color: var(--muted); }
+.btn { background: var(--accent); color: var(--bg); border: none; border-radius: 8px; padding: 9px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; cursor: pointer; letter-spacing: 0.04em; transition: all 0.2s; white-space: nowrap; }
+.btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); border-color: var(--text); transform: none; }
+.btn-success { background: var(--success); color: #0a0a0f; }
+.btn-sheet { background: #0f9d58; color: white; }
+
+/* LISTS */
+.item-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; margin-bottom: 20px; }
+.app-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+.app-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); flex-shrink: 0; }
+.item-name { flex: 1; color: var(--text); }
+.item-co { color: var(--muted); }
+.item-date { font-size: 9px; color: var(--muted); }
+.win-item { display: flex; gap: 10px; align-items: flex-start; font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 8px 12px; background: rgba(122,232,168,0.05); border: 1px solid rgba(122,232,168,0.15); border-radius: 8px; color: var(--text); line-height: 1.5; }
+.win-icon { color: var(--success); }
+.empty-state { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); padding: 12px 0; }
+
+/* SYNC */
+.sync-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.sync-status { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--success); }
+.sync-status.error { color: var(--danger); }
+
+/* DASHBOARD TAB */
+#dashTab { display: none; }
+.dash-actions { display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; }
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+.chart-title { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+.chart-wrap { position: relative; height: 200px; }
+.history-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
+.history-table th { text-align: left; padding: 8px 10px; color: var(--muted); border-bottom: 1px solid var(--border); letter-spacing: 0.06em; text-transform: uppercase; font-size: 9px; }
+.history-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+.history-table tr:last-child td { border-bottom: none; }
+.history-table tr.today-row td { background: rgba(232,201,122,0.06); }
+.history-table tr.yesterday-row td { background: rgba(122,158,232,0.05); }
+.date-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 9px; letter-spacing: 0.04em; }
+.badge-today { background: rgba(232,201,122,0.2); color: var(--accent); }
+.badge-yesterday { background: rgba(122,158,232,0.2); color: var(--accent2); }
+.badge-older { background: var(--surface2); color: var(--muted); }
+
+/* WEEK GRID */
+.week-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; margin-bottom: 24px; }
+.day-cell { aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+.day-label { font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: var(--muted); }
+.day-dots { display: flex; gap: 2px; }
+.day-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border); }
+.day-cell.today { border-color: var(--accent); border-width: 2px; }
+.day-cell.has-activity .day-dot:first-child { background: var(--accent); }
+
+/* BOTTOM */
+.bottom-bar { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 8px; }
+.bottom-note { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--success); margin-right: 6px; animation: pulse 2s infinite; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <span class="otter-big">🦦</span>
+  <div class="login-title">Nudge Me</div>
+  <div class="login-tagline">A no-BS accountability dashboard for job seekers who keep saying "I'll apply tomorrow."</div>
+  <div class="otter-quote">🦦 "Hey. I'm watching. Sign in or I'll tell your mom you watched 6 hours of Netflix again."</div>
+  <button class="login-btn" onclick="handleSignIn()">Sign in with Google</button>
+  <div id="loginStatus"></div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="container">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="otter-small">🦦</span>
+      <div>
+        <div class="app-title">Nudge Me</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="clock-display" id="clock">—:——</div>
+      <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
+      <button class="btn btn-ghost" onclick="signOut()" style="padding:6px 10px;font-size:10px">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('today')" id="tab-today">📋 Today</button>
+    <button class="tab" onclick="switchTab('apps')" id="tab-apps">💼 Applications</button>
+    <button class="tab" onclick="switchTab('dash')" id="tab-dash">📊 Dashboard</button>
+  </div>
+
+  <!-- OTTER NUDGE -->
+  <div class="nudge-bar">
+    <div class="nudge-otter">🦦</div>
+    <div class="nudge-content">
+      <div class="nudge-label"><span class="live-dot"></span>Otter says — <span id="dateLine"></span></div>
+      <div class="nudge-text" id="nudgeText">Loading...</div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num" id="jobCount">0</div><div class="stat-label">Jobs Applied<br>This Week</div></div>
+    <div class="stat-card"><div class="stat-num" id="studyHours">0h</div><div class="stat-label">Study Hours<br>Today</div></div>
+    <div class="stat-card"><div class="stat-num" id="streakCount">0</div><div class="stat-label">Day<br>Streak 🔥</div></div>
+  </div>
+
+  <!-- SYNC ROW -->
+  <div class="sync-row">
+    <span class="sync-status" id="syncStatus"></span>
+  </div>
+
+  <!-- TODAY TAB -->
+  <div id="todayTab">
+    <div class="schedule-block">
+      <div class="section-title">Today's Schedule — Day <span id="dayCount">1</span></div>
+      <div id="scheduleList"></div>
+    </div>
+
+    <div class="section-title">Today's Wins — even tiny ones</div>
+    <div class="input-row">
+      <input class="app-input" id="winInput" placeholder="e.g. Got out of bed at 8am, studied 30 min, sent 1 app...">
+      <button class="btn" onclick="addWin()">+ Add</button>
+    </div>
+    <div class="item-list" id="winList"></div>
+
+    <div class="week-grid" id="weekGrid"></div>
+
+    <div class="bottom-bar">
+      <div class="bottom-note">Auto-syncs to Google Sheets · Day <span id="dayCount2">1</span> of sprint</div>
+      <button class="btn btn-ghost" onclick="resetDay()" style="font-size:10px;padding:6px 10px">Reset Day</button>
+    </div>
+  </div>
+
+  <!-- APPS TAB -->
+  <div id="appsTab" style="display:none">
+    <div class="section-title">Log a New Application</div>
+    <div class="input-row">
+      <input class="app-input" id="appRole" placeholder="Role title" style="flex:1.4">
+      <input class="app-input" id="appCo" placeholder="Company">
+      <button class="btn" onclick="addApplication()">+ Log</button>
+    </div>
+    <div class="section-title">All Applications</div>
+    <div class="item-list" style="max-height:400px" id="appList"></div>
+    <div class="bottom-bar">
+      <div class="bottom-note" id="appCount">0 applications total</div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD TAB -->
+  <div id="dashTab" style="display:none">
+    <div class="dash-actions">
+      <button class="btn btn-sheet" onclick="openSheet()">📊 Open Google Sheet</button>
+      <button class="btn btn-success" onclick="downloadCSV()">⬇ Download CSV</button>
+      <button class="btn btn-ghost" onclick="loadDashboard()">↺ Refresh</button>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Applications This Week</div>
+      <div class="chart-wrap"><canvas id="appsChart"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Activity History</div>
+      <div style="overflow-x:auto">
+        <table class="history-table" id="historyTable">
+          <thead><tr><th>Date</th><th>Type</th><th>Detail</th><th>Status</th></tr></thead>
+          <tbody id="historyBody"><tr><td colspan="4" style="color:var(--muted);padding:16px 10px">Loading history from Google Sheets...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const CLIENT_ID = '688887875011-qjlba426ooirqbil5nar843g8vqd5nld.apps.googleusercontent.com';
+const SHEET_ID  = '1FQoKPi4FVZIBFfhCUjJMBI6GF-nSQGS1jAVKZUan7xc';
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
+const SCOPES    = 'https://www.googleapis.com/auth/spreadsheets';
+
+let accessToken = null;
+let tokenClient = null;
+let appsChartInstance = null;
+
+// ─── THEME ───────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
+  localStorage.setItem('nudgeme_theme', isDark ? 'light' : 'dark');
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+function handleSignIn() {
+  const status = document.getElementById('loginStatus');
+  status.textContent = 'Connecting to Google...';
+  if (typeof google === 'undefined') {
+    status.textContent = 'Google script not loaded. Please refresh.';
+    return;
+  }
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (resp) => {
+      if (resp.error) { status.textContent = 'Sign-in failed: ' + resp.error; return; }
+      accessToken = resp.access_token;
+      localStorage.setItem('nudgeme_token', accessToken);
+      showApp();
+    },
+  });
+  tokenClient.requestAccessToken({ prompt: 'consent' });
+}
+
+function signOut() {
+  accessToken = null;
+  localStorage.removeItem('nudgeme_token');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// ─── SHEETS ──────────────────────────────────────────────────────────────────
+async function logToSheet(tab, row) {
+  if (!accessToken) return;
+  try {
+    await ensureTab(tab);
+    const res = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(tab)}!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+      { method:'POST', headers:{'Authorization':`Bearer ${accessToken}`,'Content-Type':'application/json'}, body: JSON.stringify({values:[row]}) }
+    );
+    setSyncStatus(res.ok ? '✓ Synced to Google Sheets' : '⚠ Sync error', !res.ok);
+  } catch(e) { setSyncStatus('⚠ Sync failed', true); }
+}
+
+async function ensureTab(tab) {
+  try {
+    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}`,{headers:{'Authorization':`Bearer ${accessToken}`}});
+    const d = await res.json();
+    if (d.sheets?.some(s=>s.properties.title===tab)) return;
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`,{
+      method:'POST',headers:{'Authorization':`Bearer ${accessToken}`,'Content-Type':'application/json'},
+      body:JSON.stringify({requests:[{addSheet:{properties:{title:tab}}}]})
+    });
+  } catch(e){}
+}
+
+async function fetchSheetData(tab) {
+  if (!accessToken) return [];
+  try {
+    const res = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(tab)}!A:E`,
+      {headers:{'Authorization':`Bearer ${accessToken}`}}
+    );
+    const d = await res.json();
+    return d.values || [];
+  } catch(e) { return []; }
+}
+
+function setSyncStatus(msg, isError) {
+  const el = document.getElementById('syncStatus');
+  el.textContent = msg;
+  el.className = 'sync-status' + (isError?' error':'');
+  setTimeout(()=>el.textContent='',4000);
+}
+
+function openSheet() {
+  window.open(SHEET_URL, '_blank');
+}
+
+// ─── DOWNLOAD CSV ─────────────────────────────────────────────────────────────
+async function downloadCSV() {
+  setSyncStatus('Preparing download...', false);
+  const logs = await fetchSheetData('Daily Log');
+  const apps = await fetchSheetData('Applications');
+  const streaks = await fetchSheetData('Streaks');
+
+  let csv = 'NUDGE ME — Full History Export\n\n';
+  csv += '=== DAILY LOG ===\n';
+  csv += 'Date,Time,Type,Detail,Status\n';
+  logs.forEach(r => csv += r.map(c=>`"${c}"`).join(',') + '\n');
+  csv += '\n=== APPLICATIONS ===\n';
+  csv += 'Date,Time,Role,Company,Status\n';
+  apps.forEach(r => csv += r.map(c=>`"${c}"`).join(',') + '\n');
+  csv += '\n=== STREAKS ===\n';
+  csv += 'Date,Streak Count,Details\n';
+  streaks.forEach(r => csv += r.map(c=>`"${c}"`).join(',') + '\n');
+
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `nudge-me-history-${new Date().toLocaleDateString('en-US').replace(/\//g,'-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  setSyncStatus('✓ Downloaded!', false);
+}
+
+// ─── LOCAL DATA ──────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'nudgeme_v5';
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultData(); }
+  catch { return defaultData(); }
+}
+function defaultData() {
+  return { startDate: new Date().toDateString(), streak: 0, lastActiveDate: null, todayDone: {}, applications: [], wins: [] };
+}
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+let data = loadData();
+
+// ─── SCHEDULE ────────────────────────────────────────────────────────────────
+const schedule = [
+  {time:'08:00',end:8.5, title:'Wake up — no phone',              desc:"Drink water. Splash face. No reels, no news. The otter is watching.",    id:'wake'},
+  {time:'08:30',end:9,   title:'Light movement + fresh air',       desc:"Walk to kitchen, open window, 5 min outside. Reset cortisol.",           id:'move'},
+  {time:'09:00',end:11,  title:'⚡ Study Block 1 — 2 hours',       desc:"SQL / Python / Analytics. Phone in another room. Timer on.",              id:'study1'},
+  {time:'11:00',end:11.5,title:'Real meal + break',                desc:"Eat something actual. Not chips. 30 min away from screen.",               id:'meal1'},
+  {time:'11:30',end:13,  title:'💼 Job Applications — Block 1',    desc:"Max 3 targeted applications. Quality over quantity. You've got this.",    id:'jobs1'},
+  {time:'13:00',end:13.5,title:'Break + walk',                     desc:"Non-negotiable. Body needs a reset. 20 min. Go outside.",                 id:'break1'},
+  {time:'13:30',end:15,  title:'💼 Job Applications — Block 2',    desc:"Referral outreach, LinkedIn connects, follow-ups.",                       id:'jobs2'},
+  {time:'15:00',end:16,  title:'⚡ Study Block 2 — 1 hour',        desc:"Review notes, practice problem, case study. Last push.",                  id:'study2'},
+  {time:'16:00',end:16.5,title:'Log wins + prep tomorrow',         desc:"Fill this tracker. Even logging is a win. Set tomorrow's 3 priorities.",  id:'log'},
+  {time:'16:30',end:22,  title:'Free time — earned',               desc:"Netflix, reels — guilt-free. You earned it. Enjoy without guilt.",        id:'free'},
+  {time:'22:00',end:23,  title:'Wind down — no screens after 10pm',desc:"Dim lights. No doom scroll. Sleep by 11pm. Rest is productive.",          id:'wind'},
+];
+
+// ─── NUDGES ──────────────────────────────────────────────────────────────────
+const otterNudges = [
+  "It's early. I'm impressed. Drink water. Don't touch your phone. Just water.",
+  "Morning! The otter has logged in. Has the human? Get to your desk. One step.",
+  "Study block. Phone face-down. Timer on. I believe in you more than you believe in yourself right now.",
+  "Eat something real. Chips are not food. The otter is judging your pantry choices.",
+  "Applications window. 3 good ones. That's it. Each one is a lottery ticket — buy the tickets.",
+  "Walk. Outside. Now. The recruiter email will still be there (or not) when you get back.",
+  "Last study block. One concept. One problem. You're building compound interest in your brain.",
+  "Log your wins. Yes, even the small ones. ESPECIALLY the small ones. That's how this works.",
+  "Earned rest. You did the work. The otter approves. Watch that show guilt-free.",
+  "Wind down. Phone down. The job offer isn't coming at 11pm. Sleep is your competitive advantage."
+];
+
+function getNudge(h) {
+  if (h < 8)  return otterNudges[0];
+  if (h < 9)  return otterNudges[1];
+  if (h < 11) return otterNudges[2];
+  if (h < 12) return otterNudges[3];
+  if (h < 14) return otterNudges[4];
+  if (h < 15) return otterNudges[5];
+  if (h < 16) return otterNudges[6];
+  if (h < 17) return otterNudges[7];
+  if (h < 22) return otterNudges[8];
+  return otterNudges[9];
+}
+
+// ─── CLOCK ───────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  document.getElementById('clock').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  document.getElementById('dateLine').textContent = now.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+  const day = Math.floor((now - new Date(data.startDate))/86400000)+1;
+  document.getElementById('dayCount').textContent = day;
+  document.getElementById('dayCount2').textContent = day;
+  document.getElementById('nudgeText').textContent = getNudge(h);
+  const hDec = h + m/60;
+  document.querySelectorAll('.time-slot').forEach(el=>el.classList.remove('active-now'));
+  schedule.forEach(s=>{
+    const sh = parseInt(s.time.split(':')[0])+parseInt(s.time.split(':')[1])/60;
+    if(hDec>=sh&&hDec<s.end){const el=document.getElementById('slot-'+s.id);if(el)el.classList.add('active-now');}
+  });
+}
+
+// ─── SCHEDULE ────────────────────────────────────────────────────────────────
+function renderSchedule() {
+  const list = document.getElementById('scheduleList');
+  list.innerHTML = '';
+  schedule.forEach(s=>{
+    const done = data.todayDone[s.id];
+    const div = document.createElement('div');
+    div.className='time-slot'+(done?' done':'');
+    div.id='slot-'+s.id;
+    div.innerHTML=`<div class="time-tag">${s.time}</div><div class="slot-content"><div class="slot-title">${s.title}</div><div class="slot-desc">${s.desc}</div></div><div class="slot-check">${done?'✓':''}</div>`;
+    div.onclick=()=>toggleSlot(s.id,s.title);
+    list.appendChild(div);
+  });
+}
+
+function toggleSlot(id,title) {
+  const completing = !data.todayDone[id];
+  data.todayDone[id] = completing;
+  if(completing){
+    updateStreak();
+    const now = new Date();
+    logToSheet('Daily Log',[now.toLocaleDateString(),now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),'Schedule',title,'Completed']);
+  }
+  saveData(data); renderSchedule(); updateStats();
+}
+
+// ─── APPLICATIONS ─────────────────────────────────────────────────────────────
+function addApplication() {
+  const role = document.getElementById('appRole').value.trim();
+  const co   = document.getElementById('appCo').value.trim();
+  if(!role) return;
+  const now = new Date();
+  data.applications.unshift({role,co,date:now.toLocaleDateString()});
+  document.getElementById('appRole').value='';
+  document.getElementById('appCo').value='';
+  logToSheet('Applications',[now.toLocaleDateString(),now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),role,co,'Applied']);
+  saveData(data); renderApps(); updateStats();
+}
+
+function renderApps() {
+  const list = document.getElementById('appList');
+  list.innerHTML='';
+  if(!data.applications.length){list.innerHTML='<div class="empty-state">No applications logged yet. The otter is waiting... 🦦</div>';return;}
+  data.applications.forEach(a=>{
+    const div=document.createElement('div');
+    div.className='app-item';
+    div.innerHTML=`<div class="app-dot"></div><div class="item-name">${a.role}</div><div class="item-co">${a.co}</div><div class="item-date">${a.date}</div>`;
+    list.appendChild(div);
+  });
+  document.getElementById('appCount').textContent=`${data.applications.length} application${data.applications.length!==1?'s':''} total`;
+}
+
+// ─── WINS ─────────────────────────────────────────────────────────────────────
+function addWin() {
+  const val = document.getElementById('winInput').value.trim();
+  if(!val) return;
+  const now = new Date();
+  data.wins.unshift({text:val,time:now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  document.getElementById('winInput').value='';
+  logToSheet('Daily Log',[now.toLocaleDateString(),now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),'Win',val,'']);
+  saveData(data); renderWins();
+}
+
+function renderWins() {
+  const list = document.getElementById('winList');
+  list.innerHTML='';
+  if(!data.wins.length){list.innerHTML='<div class="empty-state">Log one win. Any win. Getting out of bed counts. 🦦</div>';return;}
+  data.wins.slice(0,10).forEach(w=>{
+    const div=document.createElement('div');
+    div.className='win-item';
+    div.innerHTML=`<span class="win-icon">✦</span><span style="flex:1">${w.text}</span><span style="color:var(--muted);font-size:9px">${w.time}</span>`;
+    list.appendChild(div);
+  });
+}
+
+// ─── WEEK GRID ────────────────────────────────────────────────────────────────
+function renderWeekGrid() {
+  const grid = document.getElementById('weekGrid');
+  grid.innerHTML='';
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today=new Date().getDay();
+  days.forEach((d,i)=>{
+    const cell=document.createElement('div');
+    cell.className='day-cell'+(i===today?' today':'');
+    cell.innerHTML=`<div class="day-label">${d}</div><div class="day-dots"><div class="day-dot"></div><div class="day-dot"></div></div>`;
+    grid.appendChild(cell);
+  });
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('jobCount').textContent = data.applications.length;
+  const sd=['study1','study2'].filter(s=>data.todayDone[s]).length;
+  document.getElementById('studyHours').textContent = sd===2?'3h':sd===1?'2h':'0h';
+  document.getElementById('streakCount').textContent = data.streak||0;
+}
+
+function updateStreak() {
+  const today=new Date().toDateString();
+  const done=Object.values(data.todayDone).filter(Boolean).length;
+  if(done>=3&&data.lastActiveDate!==today){
+    data.lastActiveDate=today;
+    data.streak=(data.streak||0)+1;
+    logToSheet('Streaks',[new Date().toLocaleDateString(),data.streak,done+' blocks completed']);
+  }
+}
+
+function resetDay() {
+  if(!confirm("Reset today's check-ins? Applications and wins are kept.")) return;
+  data.todayDone={};
+  saveData(data); renderSchedule(); updateStats();
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('todayTab').style.display = tab==='today'?'block':'none';
+  document.getElementById('appsTab').style.display  = tab==='apps'?'block':'none';
+  document.getElementById('dashTab').style.display  = tab==='dash'?'block':'none';
+  ['today','apps','dash'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='dash') loadDashboard();
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const tbody = document.getElementById('historyBody');
+  tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);padding:16px 10px">Loading from Google Sheets...</td></tr>';
+
+  const [logs, apps] = await Promise.all([fetchSheetData('Daily Log'), fetchSheetData('Applications')]);
+  const allRows = [
+    ...apps.map(r=>({date:r[0]||'',time:r[1]||'',type:'Application',detail:(r[2]||'')+(r[3]?' @ '+r[3]:''),status:r[4]||'Applied'})),
+    ...logs.filter(r=>r[2]==='Win').map(r=>({date:r[0]||'',time:r[1]||'',type:'Win',detail:r[3]||'',status:'✦'})),
+    ...logs.filter(r=>r[2]==='Schedule').map(r=>({date:r[0]||'',time:r[1]||'',type:'Schedule',detail:r[3]||'',status:r[4]||''})),
+  ].sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time));
+
+  const today = new Date().toLocaleDateString();
+  const yesterday = new Date(Date.now()-86400000).toLocaleDateString();
+
+  tbody.innerHTML='';
+  if(!allRows.length){
+    tbody.innerHTML='<tr><td colspan="4" style="color:var(--muted);padding:16px 10px">No history yet. Start logging!</td></tr>';
+  } else {
+    allRows.slice(0,50).forEach(r=>{
+      const tr=document.createElement('tr');
+      const isToday=r.date===today, isYesterday=r.date===yesterday;
+      tr.className=isToday?'today-row':isYesterday?'yesterday-row':'';
+      const badgeClass=isToday?'badge-today':isYesterday?'badge-yesterday':'badge-older';
+      const badgeLabel=isToday?'Today':isYesterday?'Yesterday':r.date;
+      tr.innerHTML=`<td><span class="date-badge ${badgeClass}">${badgeLabel}</span></td><td style="color:var(--muted)">${r.type}</td><td>${r.detail}</td><td style="color:var(--muted)">${r.status}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Chart
+  const appsByDay={};
+  const days7=[...Array(7)].map((_,i)=>{
+    const d=new Date(Date.now()-i*86400000);
+    return d.toLocaleDateString();
+  }).reverse();
+  days7.forEach(d=>appsByDay[d]=0);
+  apps.forEach(r=>{ if(appsByDay.hasOwnProperty(r[0])) appsByDay[r[0]]++; });
+
+  const ctx=document.getElementById('appsChart').getContext('2d');
+  if(appsChartInstance) appsChartInstance.destroy();
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  appsChartInstance = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:days7.map(d=>new Date(d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})),
+      datasets:[{
+        label:'Applications',
+        data:days7.map(d=>appsByDay[d]),
+        backgroundColor:'rgba(122,158,232,0.5)',
+        borderColor:'rgba(122,158,232,0.9)',
+        borderWidth:1,
+        borderRadius:4,
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:isDark?'#6b6b80':'#8a8570',font:{family:'IBM Plex Mono',size:9}},grid:{color:isDark?'#2a2a3a':'#ddd9ce'}},
+        y:{ticks:{color:isDark?'#6b6b80':'#8a8570',font:{family:'IBM Plex Mono',size:9},stepSize:1},grid:{color:isDark?'#2a2a3a':'#ddd9ce'},beginAtZero:true}
+      }
+    }
+  });
+}
+
+// ─── SHOW APP ─────────────────────────────────────────────────────────────────
+function showApp() {
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  renderSchedule(); renderApps(); renderWins(); renderWeekGrid(); updateStats(); updateClock();
+  setInterval(updateClock, 30000);
+  logToSheet('Daily Log',[new Date().toLocaleDateString(),new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),'App Opened','','']);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  const theme = localStorage.getItem('nudgeme_theme')||'dark';
+  document.documentElement.setAttribute('data-theme',theme);
+  document.getElementById('themeBtn').textContent = theme==='dark'?'☀️':'🌙';
+  const saved = localStorage.getItem('nudgeme_token');
+  if(saved){accessToken=saved;showApp();}
+});
+</script>
+</body>
+</html>
